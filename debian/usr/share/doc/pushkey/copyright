@@ -1,18 +1,18 @@
 This work was packaged for Debian by:
 
-    abiheiri <abiheiri@gmail.com> on Tue, 27 Dec 2011 14:10:34 -0500
+    Al Biheiri <abiheiri@gmail.com> on Tue, 09 Oct 2012 15:48:30 -0400
 
 It was downloaded from:
 
-    <http://forgottheaddress.blogspot.com>
+    http://www.forgottheaddress.blogspot.com
 
 Upstream Author(s):
 
-    <Al Biheiri abiheiri@gmail.com>
+    Al Biheiri
 
 Copyright:
 
-    <Copyright (C) 2011 Al Biheiri>
+    <Copyright (C) 2012 Al Biheiri>
 
 License:
 
@@ -20,8 +20,8 @@ License:
 
 The Debian packaging is:
 
-    Copyright (C) 2011 abiheiri <abiheiri@gmail.com>
+    Copyright (C) 2012 Al Biheiri <abiheiri@gmail.com>
+
 
 and is licensed under the GPL version 3,
 see "/usr/share/common-licenses/GPL-3".
-

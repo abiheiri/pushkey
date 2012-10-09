@@ -1,0 +1,8 @@
+debian is actual build folder
+pushkey outside of debian folder is not included in build process
+
+building:
+fakeroot dpkg-deb --build debian
+
+validation:
+lintian debian.deb or lintian -vi debian.deb

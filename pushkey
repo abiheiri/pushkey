@@ -3,6 +3,8 @@
 #20091229 - abiheiri@gmail.com
 #20100601 - v0.8 - added keygen and detection of rsa or dsa keys
 #20120106 - v1.0 - now it only password prompts once.. hoorah
+#20121009 - v1.1 - added support for unique public keys
+
 
 REM_HOST=$1
 KEYTYPE=
@@ -11,20 +13,36 @@ DIR=$HOME/.ssh
 if [[ "$1" == "" ]]
 then
         cat <<EOF
+
 ********************************
 You must specify the IP or Name!
 ********************************
 
 eg: $0 192.168.0.10
-eg $0 Hostname.FQDN.com
+eg: $0 Hostname.FQDN.com
+
+
+
+
+IF YOU NEED TO SPECIFY A NON STANDARD NAMING PUBLIC KEY THEN READ ON! (optional) 
+--------------------------------------------------------------------------------
+By default $0 will use id_dsa.pub, if its not there it will attempt to use id_rsa.pub instead.
+If you want to specify a different key then you must run $0 [ip.address] [other key path].
+eg: $0 my.ip.address /home/user/.ssh/id_different.pub
+
 
 EOF
 exit 1
 fi
 
+if [[ "$2" != "" ]]
+then
+	KEYTYPE=$2
+fi
+
 pushkey () {
-	VAL=$(cat $DIR/$KEYTYPE)
-	ssh $REM_HOST "umask 077; test -d .ssh || mkdir .ssh; chmod 700 .ssh ; echo $VAL >> .ssh/authorized_keys; chmod 600 .ssh/*" || exit 1
+	VAL=$(cat $KEYTYPE)
+	ssh $REM_HOST "umask 077; test -d .ssh || mkdir .ssh; chmod 700 .ssh ; echo $VAL >> .ssh/authorized_keys; chmod 600 .ssh/*" || exit 2
 	echo "Cheers! Now go verify remote host is set up correctly."
 }
 
@@ -34,17 +52,27 @@ create_keys () {
         case "$INPUT" in
                 rsa|RSA) ssh-keygen && KEYTYPE="id_rsa.pub" && pushkey;;
                 dsa|DSA) ssh-keygen -t dsa && KEYTYPE="id_dsa.pub" && pushkey;;
-                *) echo "*** You didnt specify dsa or rsa ***"; exit 1;;
+                *) echo "*** You didnt specify dsa or rsa ***"; exit 3;;
         esac
 }
 
 
-if [[ -e  $DIR/id_dsa.pub ]]
+if [[ $KEYTYPE != "" ]]
 then
-        KEYTYPE="id_dsa.pub" && pushkey
+	if [[ -e $KEYTYPE ]]
+	then
+		pushkey
+	else
+		echo -e '\E[47;31m'"\033[1mWho boofed? Problem occurred with specified\033[0m"
+		echo "$KEYTYPE <--- Does it exist? Permissions issue? I Dunno..."
+		exit 4
+	fi
+elif [[ -e  $DIR/id_dsa.pub ]]
+then
+        KEYTYPE="$DIR/id_dsa.pub" && pushkey
 elif [[ -e $DIR/id_rsa.pub ]] 
 then
-        KEYTYPE="id_rsa.pub" && pushkey
+        KEYTYPE="$DIR/id_rsa.pub" && pushkey
 else
         create_keys
 fi

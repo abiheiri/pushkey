@@ -1,5 +1,5 @@
 Package: pushkey
-Version: 1.0-1
+Version: 1.1-1
 Section: misc
 Priority: extra
 Architecture: all
@@ -7,4 +7,4 @@ Depends: bash (>= 4.0), openssh-client (>= 4.8), coreutils (>= 5.0-5)
 Maintainer: Al Biheiri <abiheiri@gmail.com>
 Homepage: http://forgottheaddress.blogspot.com
 Description: Designed to copy your ssh key to a specified host
- Applies the correct permissions on authorized_keys file and .ssh folder. If your local key doesnt exist it will create one.
+ Copies ssh key to a specified host & also creates ssh key if non-existent
