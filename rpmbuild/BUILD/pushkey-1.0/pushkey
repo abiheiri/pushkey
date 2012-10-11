@@ -1,0 +1,48 @@
+#!/bin/bash
+#designed to pushkey to an ip eg. ./pushkey.sh 192.168.x.x
+#20091229 - abiheiri@gmail.com
+#20100601 - v1.1 - added keygen and detection of rsa or dsa keys
+
+REM_HOST=$1
+KEYTYPE=
+DIR=$HOME/.ssh
+
+if [[ "$1" == "" ]]
+then
+	cat <<EOF
+********************************
+You must specify the IP or Name!
+********************************
+
+eg: $0 192.168.0.10
+eg $0 Hostname.FQDN.com
+
+EOF
+exit 1
+fi
+
+function pushkey {
+	ssh $REM_HOST "mkdir ~/.ssh ; chmod 700 ~/.ssh"
+	cat $DIR/$KEYTYPE | ssh $REM_HOST "cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/*"
+}
+
+function create_keys {
+	echo "No public keys found... Do you want rsa or dsa keys? (default = rsa)"
+	read INPUT
+	case "$INPUT" in
+		rsa|RSA) ssh-keygen && KEYTYPE="id_rsa.pub" && pushkey;;
+		dsa|DSA) ssh-keygen -t dsa && KEYTYPE="id_dsa.pub" && pushkey;;
+		*) echo "*** You didnt specify dsa or rsa ***"; exit 1;;
+	esac
+}
+
+
+if [[ -e  $DIR/id_dsa.pub ]]
+then
+	KEYTYPE="id_dsa.pub" && pushkey
+elif [[ -e $DIR/id_rsa.pub ]] 
+then
+	KEYTYPE="id_rsa.pub" && pushkey
+else
+	create_keys
+fi
