@@ -51,7 +51,7 @@ pushkey () {
 }
 
 create_keys () {
-        echo "No public keys found... Do you want rsa or dsa keys? (default = rsa)"
+        echo "No public keys found... Do you want rsa or dsa keys? If your not sure, choose RSA."
         read INPUT
         case "$INPUT" in
                 rsa|RSA) ssh-keygen && KEYTYPE="id_rsa.pub" && pushkey;;

@@ -1,83 +1,96 @@
-#!/usr/bin/env bash
-#designed to pushkey to an ip eg. ./pushkey.sh 192.168.x.x
-#20091229 - abiheiri@gmail.com
-#20100601 - v0.8 - added keygen and detection of rsa or dsa keys
-#20120106 - v1.0 - now it only password prompts once.. hoorah
-#20121009 - v1.1 - added support for unique public keys
-#20130112 - v1.2 - added support for specifying remote ssh port
+#!/usr/bin/env perl
 
+use warnings;
+use strict;
 
-REM_HOST=$1
-KEYTYPE=
-PORT=22
-DIR=$HOME/.ssh
+#use Data::Dumper;
 
-note () {
-cat <<EOF
+sub note {
+my $heredoc = <<END;
 
-usage: pushkey user@ipaddress [/path/identityfile] [port]
+usage: pushkey user\@ipaddress [-i identityfile] [-p port]
 
 examples: 
 	pushkey 192.168.0.1
-	pushkey al@myfqdn.com
+	pushkey al\@myfqdn.com
 	pushkey fqdn.com /path/id_key.pub
-	pushkey 192.168.0.1 /path/file 666
+	pushkey 192.168.0.1 /path/file 80
 
-If you dont specify identityfile then it will try $DIR/id_dsa.pub, else  id_rsa.pub.
+
+If you dont specify the path to the identityfile then it will try \$HOME/.ssh/id_dsa.pub, else id_rsa.pub
 You must specify path to identityfile if you are planning to specify a different port to pushkey
 
-EOF
+
+END
+print $heredoc; 
+exit;
 }
 
-if [[ "$1" == "" ]]
-then
-	note
-	exit 1
-fi
+#0=host, 1=keypath, 2=port
 
-if [[ "$2" != "" ]]
-then
-	KEYTYPE=$2
-fi
+exists $ARGV[0] or note ();
 
-if [[ "$3" = "[0-9]" ]]; then
-	PORT=$3
-fi
+my $REM_HOST=$ARGV[0];
+my $KEY="";
+my $PORT=22;
+my $DIR=$ENV{"HOME"};
+my $VAL="";
 
-pushkey () {
-	VAL=$(cat $KEYTYPE)
-	ssh -p $PORT $REM_HOST "umask 077; test -d .ssh || mkdir .ssh; chmod 700 .ssh ; echo $VAL >> .ssh/authorized_keys; chmod 600 .ssh/*" || exit 2
-	echo "Cheers! Now go verify remote host is set up correctly."
+if (defined $ARGV[1]) {
+	$KEY=$ARGV[1];
 }
 
-create_keys () {
-        echo "No public keys found... Do you want rsa or dsa keys? If your not sure, choose RSA."
-        read INPUT
-        case "$INPUT" in
-                rsa|RSA) ssh-keygen && KEYTYPE="id_rsa.pub" && pushkey;;
-                dsa|DSA) ssh-keygen -t dsa && KEYTYPE="id_dsa.pub" && pushkey;;
-                *) echo "*** You didnt specify dsa or rsa ***"; exit 3;;
-        esac
+if (defined $ARGV[2]) {
+	if ($ARGV[2] =~ /^[0-9]+$/) {
+		$PORT=$ARGV[2];
+	}
 }
 
+sub pushkey {
+	open (MYFILE, $KEY);
+	while (<MYFILE>) {
+	   	chomp;
+		$VAL=$_;
+	}
+	close (MYFILE); 
+	`ssh -p $PORT $REM_HOST "umask 077; test -d .ssh || mkdir .ssh; chmod 700 .ssh ; echo $VAL >> .ssh/authorized_keys; chmod 600 .ssh/*" || exit 2`;
+	print "Cheers! Now go verify remote host is set up correctly.\n";
+}
 
-if [[ $KEYTYPE != "" ]]
-then
-	if [[ -e $KEYTYPE ]]
-	then
-		pushkey
-	else
-		echo -e "\033[1mWho boofed? Problem occurred with specified path\033[0m"
-		echo "$KEYTYPE <--- Does it exist? Permissions issue? I Dunno..."
-		exit 4
-	fi
-elif [[ -e  $DIR/id_dsa.pub ]]
-then
-        KEYTYPE="$DIR/id_dsa.pub" && pushkey
-elif [[ -e $DIR/id_rsa.pub ]] 
-then
-        KEYTYPE="$DIR/id_rsa.pub" && pushkey
-else
-        create_keys
-fi
+sub create_keys () {
+        print "No public keys found... Do you want rsa or dsa keys? If your not sure, choose RSA.\n";
+
+        my $read=lc(<STDIN>);
+        chomp($read);
+        if ($read eq "rsa") {
+                qx/ssh-keygen/;
+                $KEY="$DIR/.ssh/id_rsa.pub";
+                pushkey ();
+        } elsif ($read eq "dsa") {
+                qx/ssh-keygen -t dsa/;
+                $KEY="$DIR/.ssh/id_dsa.pub";
+                pushkey ();
+        } else {
+                        die "*** You didnt specify dsa or rsa ***\n";
+        }
+}
+
+if ( $KEY ne "") {
+
+	if ( -e $KEY ) {
+		pushkey ();
+	} else {
+		print "The identity file path you specified failed.\n", "Does it actually exist? Possibly a permissions issue? I dunno.\n"
+	}
+
+}
+elsif (-e "$DIR/.ssh/id_dsa.pub") {
+	$KEY="$DIR/.ssh/id_dsa.pub";
+	pushkey ();
+} elsif (-e "$DIR/.ssh/id_rsa.pub") {
+	$KEY="$DIR/.ssh/id_rsa.pub";
+	pushkey ();
+} else {
+	create_keys ();
+}
 
