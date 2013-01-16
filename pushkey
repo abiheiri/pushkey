@@ -42,6 +42,7 @@ my $VAL="";
 
 GetOptions( 'i=s' => \$KEY
            ,'p:i' => \$PORT
+           ,'h|?|help' => \&note
           );
 
 
