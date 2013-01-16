@@ -57,7 +57,7 @@ sub pushkey {
 	print "Cheers! Now go verify remote host is set up correctly.\n";
 }
 
-sub create_keys () {
+sub create_keys {
         print "No public keys found... Do you want rsa or dsa keys? If your not sure, choose RSA.\n";
 
         my $read=lc(<STDIN>);
@@ -83,8 +83,7 @@ if ( $KEY ne "") {
 		print "The identity file path you specified failed.\n", "Does it actually exist? Possibly a permissions issue? I dunno.\n"
 	}
 
-}
-elsif (-e "$DIR/.ssh/id_dsa.pub") {
+} elsif (-e "$DIR/.ssh/id_dsa.pub") {
 	$KEY="$DIR/.ssh/id_dsa.pub";
 	pushkey ();
 } elsif (-e "$DIR/.ssh/id_rsa.pub") {
