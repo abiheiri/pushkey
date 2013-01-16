@@ -1,24 +1,26 @@
 #!/usr/bin/env perl
 
+#v1.2 - converted to perl added switches
+
 use warnings;
 use strict;
 
 #use Data::Dumper;
+use Getopt::Long;
 
 sub note {
 my $heredoc = <<END;
 
-usage: pushkey user\@ipaddress [/path/identityfile] [port]
+usage: pushkey [destination] [-i /path/identityfile] [-p port]
 
 examples: 
 	pushkey 192.168.0.1
 	pushkey al\@myfqdn.com
-	pushkey fqdn.com /path/id_key.pub
-	pushkey 192.168.0.1 /path/file 80
+	pushkey fqdn.com -i /path/id_key.pub
+	pushkey 192.168.0.1 -i /path/file -p 80
+	pushkey myfqdn -p 80
 
-
-If you dont specify the path to the identityfile then it will try \$HOME/.ssh/id_dsa.pub, else id_rsa.pub
-You must specify path to identityfile if you are planning to specify a different port to pushkey
+If you dont specify the identityfile then it will try \$HOME/.ssh/id_dsa.pub, else id_rsa.pub
 
 
 END
@@ -30,24 +32,21 @@ exit;
 
 exists $ARGV[0] or note ();
 
+
 my $REM_HOST=$ARGV[0];
 my $KEY="";
 my $PORT=22;
 my $DIR="$ENV{HOME}/.ssh";
 my $VAL="";
 
-if (defined $ARGV[1]) {
-	$KEY=$ARGV[1];
-}
 
-if (defined $ARGV[2]) {
-	if ($ARGV[2] =~ /^[0-9]+$/) {
-		$PORT=$ARGV[2];
-	}
-}
+GetOptions( 'i=s' => \$KEY
+           ,'p:i' => \$PORT
+          );
+
 
 sub pushkey {
-	open (MYFILE, $KEY);
+	open (MYFILE, $KEY) or die "Failed to read identiy file!\n";
 	while (<MYFILE>) {
 	   	chomp;
 		$VAL=$_;
@@ -76,7 +75,6 @@ sub create_keys {
 }
 
 if ( $KEY ne "") {
-
 	if ( -e $KEY ) {
 		pushkey ();
 	} else {
