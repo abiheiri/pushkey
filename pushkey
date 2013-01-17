@@ -28,7 +28,6 @@ print $heredoc;
 exit;
 }
 
-#0=host, 1=keypath, 2=port
 
 exists $ARGV[0] or note ();
 
@@ -71,7 +70,8 @@ sub create_keys {
                 $KEY="$DIR/id_dsa.pub";
                 pushkey ();
         } else {
-                        die "*** You didnt specify dsa or rsa ***\n";
+                        print "*** You didnt specify dsa or rsa ***\n";
+			exit 3;
         }
 }
 
