@@ -1,79 +1,94 @@
-#!/usr/bin/env bash
-#designed to pushkey to an ip eg. ./pushkey.sh 192.168.x.x
-#20091229 - abiheiri@gmail.com
-#20100601 - v0.8 - added keygen and detection of rsa or dsa keys
-#20120106 - v1.0 - now it only password prompts once.. hoorah
-#20121009 - v1.1 - added support for unique public keys
+#!/usr/bin/env perl
+
+#v1.2 - converted to perl added switches
+
+use warnings;
+use strict;
+
+#use Data::Dumper;
+use Getopt::Long;
+
+sub note {
+my $heredoc = <<END;
+
+usage: pushkey [destination] [-i /path/identityfile] [-p port]
+
+examples: 
+	pushkey 192.168.0.1
+	pushkey al\@myfqdn.com
+	pushkey fqdn.com -i /path/id_key.pub
+	pushkey 192.168.0.1 -i /path/file -p 80
+	pushkey myfqdn -p 80
+
+If you dont specify the identityfile then it will try \$HOME/.ssh/id_dsa.pub, else id_rsa.pub
 
 
-REM_HOST=$1
-KEYTYPE=
-DIR=$HOME/.ssh
-
-if [[ "$1" == "" ]]
-then
-        cat <<EOF
-
-********************************
-You must specify the IP or Name!
-********************************
-
-eg: $0 192.168.0.10
-eg: $0 Hostname.FQDN.com
-
-
-
-
-IF YOU NEED TO SPECIFY A NON STANDARD NAMING PUBLIC KEY THEN READ ON! (optional) 
---------------------------------------------------------------------------------
-By default $0 will use id_dsa.pub, if its not there it will attempt to use id_rsa.pub instead.
-If you want to specify a different key then you must run $0 [ip.address] [other key path].
-eg: $0 my.ip.address /home/user/.ssh/id_different.pub
-
-
-EOF
-exit 1
-fi
-
-if [[ "$2" != "" ]]
-then
-	KEYTYPE=$2
-fi
-
-pushkey () {
-	VAL=$(cat $KEYTYPE)
-	ssh $REM_HOST "umask 077; test -d .ssh || mkdir .ssh; chmod 700 .ssh ; echo $VAL >> .ssh/authorized_keys; chmod 600 .ssh/*" || exit 2
-	echo "Cheers! Now go verify remote host is set up correctly."
+END
+print $heredoc; 
+exit;
 }
 
-create_keys () {
-        echo "No public keys found... Do you want rsa or dsa keys? (default = rsa)"
-        read INPUT
-        case "$INPUT" in
-                rsa|RSA) ssh-keygen && KEYTYPE="id_rsa.pub" && pushkey;;
-                dsa|DSA) ssh-keygen -t dsa && KEYTYPE="id_dsa.pub" && pushkey;;
-                *) echo "*** You didnt specify dsa or rsa ***"; exit 3;;
-        esac
+#0=host, 1=keypath, 2=port
+
+exists $ARGV[0] or note ();
+
+
+my $REM_HOST=$ARGV[0];
+my $KEY="";
+my $PORT=22;
+my $DIR="$ENV{HOME}/.ssh";
+my $VAL="";
+
+
+GetOptions( 'i=s' => \$KEY
+           ,'p:i' => \$PORT
+           ,'h|?|help' => \&note
+          );
+
+
+sub pushkey {
+	open (MYFILE, $KEY) or die "Failed to read identiy file!\n";
+	while (<MYFILE>) {
+	   	chomp;
+		$VAL=$_;
+	}
+	close (MYFILE); 
+	`ssh -p $PORT $REM_HOST "umask 077; test -d .ssh || mkdir .ssh; chmod 700 .ssh ; echo $VAL >> .ssh/authorized_keys; chmod 600 .ssh/*" || exit 2`;
+	print "Cheers! Now go verify remote host is set up correctly.\n";
 }
 
+sub create_keys {
+        print "No public keys found... Do you want rsa or dsa keys? If your not sure, choose RSA.\n";
 
-if [[ $KEYTYPE != "" ]]
-then
-	if [[ -e $KEYTYPE ]]
-	then
-		pushkey
-	else
-		echo -e '\E[47;31m'"\033[1mWho boofed? Problem occurred with specified\033[0m"
-		echo "$KEYTYPE <--- Does it exist? Permissions issue? I Dunno..."
-		exit 4
-	fi
-elif [[ -e  $DIR/id_dsa.pub ]]
-then
-        KEYTYPE="$DIR/id_dsa.pub" && pushkey
-elif [[ -e $DIR/id_rsa.pub ]] 
-then
-        KEYTYPE="$DIR/id_rsa.pub" && pushkey
-else
-        create_keys
-fi
+        my $read=lc(<STDIN>);
+        chomp($read);
+        if ($read eq "rsa") {
+                qx/ssh-keygen/;
+                $KEY="$DIR/id_rsa.pub";
+                pushkey ();
+        } elsif ($read eq "dsa") {
+                qx/ssh-keygen -t dsa/;
+                $KEY="$DIR/id_dsa.pub";
+                pushkey ();
+        } else {
+                        die "*** You didnt specify dsa or rsa ***\n";
+        }
+}
+
+if ( $KEY ne "") {
+	if ( -e $KEY ) {
+		pushkey ();
+	} else {
+		print "The identity file path you specified failed.\n", "Does it actually exist? Possibly a permissions issue? I dunno.\n"
+	}
+
+} elsif (-e "$DIR/id_dsa.pub") {
+	$KEY="$DIR/id_dsa.pub";
+	pushkey ();
+} elsif (-e "$DIR/id_rsa.pub") {
+	$KEY="$DIR/id_rsa.pub";
+	pushkey ();
+} else {
+	create_keys ();
+}
 
