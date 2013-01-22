@@ -52,8 +52,8 @@ sub pushkey {
 		$VAL=$_;
 	}
 	close (MYFILE); 
-	`ssh -p $PORT $REM_HOST "umask 077; test -d .ssh || mkdir .ssh; chmod 700 .ssh ; echo $VAL >> .ssh/authorized_keys; chmod 600 .ssh/*" || exit 2`;
-	print "Cheers! Now go verify remote host is set up correctly.\n";
+	`ssh -p $PORT $REM_HOST "umask 077; test -d .ssh || mkdir .ssh; chmod 700 .ssh ; echo $VAL >> .ssh/authorized_keys; chmod 600 .ssh/*" || exit 2`
+	&& print "Cheers! Now go verify remote host is set up correctly.\n";
 }
 
 sub create_keys {
