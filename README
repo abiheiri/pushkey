@@ -1,8 +1,38 @@
-debian is actual build folder
-pushkey outside of debian folder is not included in build process
+NAME
+       pushkey - Pushes ssh key to remote server and generates ssh key if non-existent.
 
-building:
-fakeroot dpkg-deb --build debian
+SYNOPSIS
+       pushkey [user@machine] [-i [identity_file]] [-p [port number]]
 
-validation:
-lintian debian.deb or lintian -vi debian.deb
+DESCRIPTION
+       Pushes  your  ssh  key  to a remote location. If the remote machine has never been setup with keys before, then pushkey will create a .ssh folder and add your ssh key to authorized_keys file. It will
+       also apply the 700 permission on the folder and 600 on the file.
+
+OPTIONS
+       If you want to specify a different identiy_file (optional) then you must run pushkey with the -i switch. If you dont specify a identiy_file (-i switch) then pushkey will attempt to use id_dsa.pub. If
+       it doesnt find that file it will try id_rsa.pub next. If both options exhausted then it will go through the process of creating one for you.
+       Specifying the port (-p) number is also optional. If you dont specify one then it will use default ssh port 22.
+
+EXAMPLES
+            pushkey 192.168.0.1
+            pushkey al@myfqdn.com
+            pushkey fqdn.com -i /path/id_key.pub
+            pushkey 192.168.0.1 -i /path/file -p 80
+            pushkey myfqdn -p 80
+
+TECHNICAL NOTES
+            debian is actual build folder
+            pushkey outside of debian folder is not included in build process
+
+            building:
+            fakeroot dpkg-deb --build debian
+
+          validation:
+          lintian debian.deb or lintian -vi debian.deb
+
+AUTHOR
+       Written by Al Biheiri.
+
+REPORTING BUGS
+       report issues       
+       
